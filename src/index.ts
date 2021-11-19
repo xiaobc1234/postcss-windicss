@@ -25,12 +25,16 @@ const plugin = (options: WindiPostCSSPluginOptions): any => {
 
   const utils = context.utils
 
-  return (root, result) => {
-    root.walkAtRules(async (atRule) => {
+  return (root) => {
+    const promiseArray: any[] = []
+    root.walkAtRules((atRule) => {
       const entry = atRule.root().source?.input.from
       if (atRule.name === 'windicss') {
         context.entry = entry
-        atRule.replaceWith(parse(await utils.generateCSS()))
+        promiseArray.push(utils.generateCSS().then((data) => {
+          atRule.replaceWith(parse(data))
+        }))
+        // atRule.replaceWith(parse(await utils.generateCSS()))
       }
       // @apply
       else if (['apply'].includes(atRule.name)) {
@@ -38,28 +42,32 @@ const plugin = (options: WindiPostCSSPluginOptions): any => {
         if (!rule)
           return
 
-        await utils.ensureInit()
-        const css = rule.toString()
-        const transformed = css ? utils.transformCSS(css, entry || '') : undefined
-        if (transformed)
-          rule.replaceWith(parse(transformed))
+        // await utils.ensureInit()
+        promiseArray.push(utils.ensureInit().then(() => {
+          const css = rule.toString()
+          const transformed = css ? utils.transformCSS(css, entry || '') : undefined
+          if (transformed)
+            rule.replaceWith(parse(transformed))
+        }))
       }
       // @screen, @variants
       else if (['screen', 'variants'].includes(atRule.name)) {
-        await utils.ensureInit()
-        const css = atRule.toString()
-        const transformed = css ? utils.transformCSS(css, entry || '') : undefined
-        if (transformed)
-          atRule.replaceWith(parse(transformed))
+        // await utils.ensureInit()
+        promiseArray.push(utils.ensureInit().then(() => {
+          const css = atRule.toString()
+          const transformed = css ? utils.transformCSS(css, entry || '') : undefined
+          if (transformed)
+            atRule.replaceWith(parse(transformed))
+        }))
       }
-
-      atRule.walkDecls((decl) => {
-        // We work with each `decl` object here.
-        const match = decl.value.match(/^\s*theme\((['"])(.*)\1\)\s*$/)
-        if (match && match[2])
-          decl.value = (utils.processor.theme(match[2]) as any).toString()
-      })
     })
+    root.walkDecls((decl) => {
+      // We work with each `decl` object here.
+      const match = decl.value.match(/^\s*theme\((['"])(.*)\1\)\s*$/)
+      if (match && match[2])
+        decl.value = (utils.processor.theme(match[2]) as any).toString()
+    })
+    return Promise.all(promiseArray)
   }
 
   // return {
