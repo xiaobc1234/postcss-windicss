@@ -1,6 +1,8 @@
-# postcss-windicss
+# postcss-windicss-postcss7
 
 [![NPM version](https://img.shields.io/npm/v/postcss-windicss?color=a1b858&label=)](https://www.npmjs.com/package/postcss-windicss)
+
+> fork from postcss-windicss. 在postcss-windicss插件上增加postcss7支持
 
 > 🧪 Experimental.
 
@@ -8,10 +10,10 @@
 
 ## Installation
 
-Install `postcss-windicss` from NPM
+Install `postcss-windicss-postcss7` from NPM
 
 ```bash
-npm i -D postcss-windicss
+npm i -D postcss-windicss-postcss7
 ```
 
 Create `postcss.config.js` under your project root.
@@ -50,6 +52,32 @@ export default defineConfig({
 
 And enjoy!
 
+## build-scripts support
+
+```js
+
+module.exports = ({ context, onGetWebpackConfig }) => {
+  onGetWebpackConfig((config) => {
+    // postcss方式
+    const setModuleScss = (config) => {
+      config.module
+        .rule('scss')
+        .use('postcss-loader')
+        .tap((opts = {}) => {
+          if (!opts.plugins) {
+            opts.plugins = [];
+          }
+          opts.plugins.push(require('postcss-windicss-postcss7'));
+          return opts;
+        });
+    };
+    setModuleScss(config);
+  });
+};
+
+```
+
+
 ## Configuration
 
 You can pass options to the plugin by
@@ -69,7 +97,7 @@ The full configuration options can be found [here](https://github.com/windicss/v
 
 ## Dev / Build modes
 
-`postcss-windicss` has two different modes, one for incremental dev serving and one for a one-time production build. It's based on your `process.env.NODE_ENV` value.
+`postcss-windicss-postcss7` has two different modes, one for incremental dev serving and one for a one-time production build. It's based on your `process.env.NODE_ENV` value.
 
 If the tool you use does not infer it to you, you can always set them explicitly by
 
